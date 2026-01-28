@@ -14,5 +14,3 @@
 127.0.0.1 www.instagram.com
 127.0.0.1 instagram.com
 # Blocked Sites by Distraction Blocker
-
-More stuff

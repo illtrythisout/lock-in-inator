@@ -1,7 +1,7 @@
 const fs = require('node:fs/promises');
 const prompt = require('prompt-sync')({ sigint: true });
 
-let blockedSites = ['youtube.com', 'instagram.com'];
+let blockedSites = [];
 
 async function readFile(file) {
   try {
@@ -19,6 +19,28 @@ async function writeFile(file, content) {
   }
 }
 
+async function updateBlockedSitesArr() {
+  try {
+    const content = await readFile('test.txt');
+    const contentArr = content.split('# Blocked Sites by Distraction Blocker');
+    // get an array of the blocked sites
+    let blockedSitesArr = contentArr[1].split('127.0.0.1 ');
+
+    // remove first element which is \n
+    blockedSitesArr.shift();
+
+    // filter to get the correct inputs
+    blockedSites = blockedSitesArr.filter((input) => {
+      // Does not start with www.
+      return input.substring(0, 4) !== 'www.';
+    });
+
+    // remove the \n at the end of each input
+    blockedSites = blockedSites.map((site) => site.slice(0, -1));
+  } catch (error) {
+    console.error('Error updating hosts file: ', error);
+  }
+}
 async function editHostsFile(blockedSites) {
   try {
     let content = await readFile('test.txt');
@@ -43,6 +65,8 @@ async function editHostsFile(blockedSites) {
 }
 
 async function terminalInterface() {
+  await updateBlockedSitesArr();
+
   const welcomeText =
     '\u001b[1;36m' +
     'Site Blocker:' +
@@ -82,9 +106,10 @@ async function terminalInterface() {
         '\n\u001b[2m' +
         blockedSites.map((site) => '    ' + site + '\n').join(''),
     );
-    // update hosts file
-    editHostsFile(blockedSites);
   }
+
+  // update hosts file
+  editHostsFile(blockedSites);
 }
 
 terminalInterface();
