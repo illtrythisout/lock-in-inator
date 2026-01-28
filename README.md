@@ -1,1 +1,3 @@
-# mac-distraction-blocker
+# Distraction Blocker
+
+Block websites for MacOS
