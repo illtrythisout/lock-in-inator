@@ -14,6 +14,8 @@ const beginMarker = '# BEGIN Distraction Blocker';
 const endMarker = '# END Distraction Blocker';
 const redirectTo = '127.0.0.1';
 
+let blockedSites = [];
+
 // Find needed content
 function findBlockerSection(content) {
   const match = content.match(
@@ -36,7 +38,22 @@ function getUrlsFromSection(content) {
   return links;
 }
 
-let blockedSites = [];
+// Create a new blocker section
+function createBlockerSection(sites) {
+  let sitesInBlock = [];
+
+  // Add the www. duplicates
+  sites.forEach((site) => {
+    sitesInBlock.push(site);
+    sitesInBlock.push('www.' + site);
+  });
+
+  // Add the redirect link
+  sitesInBlock = sitesInBlock.map((site) => redirectTo + ' ' + site);
+
+  // Join the sites with a line break
+  return sitesInBlock.join('\n');
+}
 
 async function readFile(file) {
   try {
