@@ -55,6 +55,61 @@ function createBlockerSection(sites) {
   return sitesInBlock.join('\n');
 }
 
+// Replace or append content in the hosts file
+function updateHostsContent(original, newContent) {
+  const regex = new RegExp(
+    '(?<=# BEGIN Distraction Blocker)([\\s\\S]*?)(?=# END Distraction Blocker)',
+  );
+
+  // if the section already exists
+  if (regex.test(original)) {
+    return original.replace(regex, '\n' + newContent + '\n');
+  }
+
+  return (
+    original.trimEnd() +
+    '\n\n' +
+    beginMarker +
+    '\n' +
+    newContent +
+    '\n' +
+    endMarker
+  );
+}
+
+const originalWithout = `##
+# Host Database
+#
+# localhost is used to configure the loopback interface
+# when the system is booting.  Do not change this entry.
+##
+127.0.0.1	localhost
+255.255.255.255	broadcasthost
+::1             localhost
+
+
+`;
+const originalWith = `##
+# Host Database
+#
+# localhost is used to configure the loopback interface
+# when the system is booting.  Do not change this entry.
+##
+127.0.0.1	localhost
+255.255.255.255	broadcasthost
+::1             localhost
+
+# BEGIN Distraction Blocker
+127.0.0.1 www.youtube.com
+127.0.0.1 youtube.com
+127.0.0.1 www.instagram.com
+127.0.0.1 instagram.com
+# END Distraction Blocker`;
+
+const newSection = createBlockerSection(['youtube.com', 'x.com']);
+console.log(updateHostsContent(originalWith, newSection));
+
+// Read and write files
 async function readFile(file) {
   try {
     return await fs.readFile(file, 'utf8');
