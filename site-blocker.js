@@ -9,8 +9,8 @@ const hostsFilePath =
 const backupFilePath = hostsFilePath + '.backup';
 
 // Markers
-const beginMarker = '# BEGIN Blocked Sites by Distraction Blocker';
-const endMarker = '# END Blocked Sites by Distraction Blocker';
+const beginMarker = '# BEGIN Distraction Blocker';
+const endMarker = '# END Distraction Blocker';
 const redirectTo = '127.0.0.1';
 
 let blockedSites = [];
@@ -31,6 +31,18 @@ async function writeFile(file, content) {
   }
 }
 
+// User input validation
+function normalizeUserInput(input) {
+  return input
+    .trim()
+    .replace(/^https?:\/\//, '')
+    .replace(/^www\./, '');
+}
+function isValidUserInput(input) {
+  return /[a-zA-Z0-9@$%^&*()+/.:=?_'";,\\-]+/.test(input);
+}
+
+// Interface
 async function terminalInterface() {
   const welcomeText =
     '\u001b[1;36m' +
@@ -49,17 +61,26 @@ async function terminalInterface() {
       '\u001b[0m' +
         "  Press 'a' to add a site, 'r' to remove a site or 'q' to finish: ",
     );
+
     if (addRemovePrompt === 'a') {
       // push the inputted url
-      const toAdd = prompt('\u001b[0m' + '  Write a URL to block: ');
-      blockedSites.push(toAdd);
-    } else if (addRemovePrompt == 'r') {
+      const data = prompt('\u001b[0m' + '  Write a URL to block: ');
+      toAdd = normalizeUserInput(data);
+
+      isValidUserInput(toAdd)
+        ? blockedSites.push(toAdd)
+        : console.log('\n\u001b[2m' + 'Invalid Input');
+    }
+
+    if (addRemovePrompt == 'r') {
       // find and remove the inputted url
       const toRemove = prompt('\u001b[0m' + '  Write a URL to unblock: ');
       const index = blockedSites.indexOf(toRemove);
       // if index exists
       if (index > -1) blockedSites.splice(index, 1);
-    } else if (addRemovePrompt === 'q') {
+    }
+
+    if (addRemovePrompt === 'q') {
       // exit loop
       userIsDone = true;
     }
@@ -77,10 +98,3 @@ async function terminalInterface() {
 }
 
 // terminalInterface();
-
-function validateUserInput(input) {
-  return input
-    .trim()
-    .replace(/^https?:\/\//, '')
-    .replace(/^www\./, '');
-}

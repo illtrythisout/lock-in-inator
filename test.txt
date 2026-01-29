@@ -8,9 +8,9 @@
 255.255.255.255	broadcasthost
 ::1             localhost
 
-# BEGIN Blocked Sites by Distraction Blocker
+# BEGIN Distraction Blocker
 127.0.0.1 www.youtube.com
 127.0.0.1 youtube.com
 127.0.0.1 www.instagram.com
 127.0.0.1 instagram.com
-# END Blocked Sites by Distraction Blocker
+# END Distraction Blocker
