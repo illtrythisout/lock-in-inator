@@ -1,3 +1,4 @@
+const { link } = require('node:fs');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const prompt = require('prompt-sync')({ sigint: true });
@@ -12,6 +13,28 @@ const backupFilePath = hostsFilePath + '.backup';
 const beginMarker = '# BEGIN Distraction Blocker';
 const endMarker = '# END Distraction Blocker';
 const redirectTo = '127.0.0.1';
+
+// Find needed content
+function findBlockerSection(content) {
+  const match = content.match(
+    /(?<=# BEGIN Distraction Blocker\n)([\s\S]*?)(?=\n# END Distraction Blocker)/,
+  );
+
+  return match ? match[0] : null;
+}
+function getUrlsFromSection(content) {
+  let links = content.split('\n');
+
+  // get only the link part
+  links = links
+    .filter((link) => link.includes('127.0.0.1'))
+    .map((link) => link.match(/(?<=127.0.0.1 ).*/)[0]);
+
+  // only get the links that don't start with www.
+  links = links.filter((link) => !link.includes('www.'));
+
+  return links;
+}
 
 let blockedSites = [];
 
