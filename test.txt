@@ -7,10 +7,3 @@
 127.0.0.1	localhost
 255.255.255.255	broadcasthost
 ::1             localhost
-
-# BEGIN Distraction Blocker
-127.0.0.1 youtube.com
-127.0.0.1 www.youtube.com
-127.0.0.1 instagram.com
-127.0.0.1 www.instagram.com
-# END Distraction Blocker

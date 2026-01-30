@@ -7,5 +7,5 @@ A distraction blocker for MacOS and Linux that allows users to block chosen webs
 In the terminal run:
 
 ```bash
-node lock-in.js
+sudo node lock-in.js
 ```
