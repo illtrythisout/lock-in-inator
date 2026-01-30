@@ -19,9 +19,10 @@ let blockedSites = [];
 
 // Find needed content
 function findBlockerSection(content) {
-  const match = content.match(
-    /(?<=# BEGIN Distraction Blocker\n)([\s\S]*?)(?=\n# END Distraction Blocker)/,
-  );
+  if (!content) return null;
+
+  const regex = new RegExp(`${beginMarker}([\\s\\S]*?)${endMarker}`);
+  const match = content.match(regex);
 
   return match ? match[0] : null;
 }
@@ -44,7 +45,8 @@ function getUrlsFromSection(content) {
 
 // Create a new blocker section
 function createBlockerSection(sites) {
-  let sitesInBlock = [];
+  // This will prevent duplicate entries
+  let sitesInBlock = [...new Set(sites)];
 
   // Add the www. duplicates
   sites.forEach((site) => {
@@ -61,9 +63,7 @@ function createBlockerSection(sites) {
 
 // Replace or append content in the hosts file
 function updateHostsContent(original, newContent) {
-  const regex = new RegExp(
-    '(?<=# BEGIN Distraction Blocker)([\\s\\S]*?)(?=# END Distraction Blocker)',
-  );
+  const regex = new RegExp(`${beginMarker}([\\s\\S]*?)${endMarker}`);
 
   // if the section already exists
   if (regex.test(original)) {
@@ -114,11 +114,13 @@ async function safeWriteHosts(newContent) {
 function normalizeUserInput(input) {
   return input
     .trim()
+    .toLowerCase()
     .replace(/^https?:\/\//, '')
-    .replace(/^www\./, '');
+    .replace(/^www\./, '')
+    .split('/')[0];
 }
 function isValidUserInput(input) {
-  return /[a-zA-Z0-9@$%^&*()+/.:=?_'";,\\-]+/.test(input);
+  return /^[a-z0-9.-]+$/i.test(input);
 }
 
 // Interface
@@ -175,13 +177,13 @@ async function terminalInterface() {
 }
 
 async function main() {
-  // Set blocked sites to current sites
+  // Get current blocked sites
   const originalContent = await readFile(hostsFilePath);
   const originalBlock = findBlockerSection(originalContent);
   blockedSites = getUrlsFromSection(originalBlock);
 
   // Run terminal interface
-  terminalInterface();
+  await terminalInterface();
 
   // Create new section to replace old section
   const newSection = createBlockerSection(blockedSites);
@@ -191,4 +193,4 @@ async function main() {
   await safeWriteHosts(updated);
 }
 
-main();
+// main();
