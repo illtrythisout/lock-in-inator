@@ -1,4 +1,3 @@
-const { link } = require('node:fs');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const prompt = require('prompt-sync')({ sigint: true });
@@ -6,7 +5,9 @@ require('dotenv').config();
 
 // File Paths
 const hostsFilePath =
-  process.env.NODE_ENV === 'development' ? './test.txt' : '/etc/hosts';
+  process.env.NODE_ENV === 'development'
+    ? path.join(__dirname, 'test.txt')
+    : '/etc/hosts';
 const backupFilePath = hostsFilePath + '.backup';
 
 // Markers
@@ -25,6 +26,9 @@ function findBlockerSection(content) {
   return match ? match[0] : null;
 }
 function getUrlsFromSection(content) {
+  // Handle empty content
+  if (!content) return [];
+
   let links = content.split('\n');
 
   // get only the link part
@@ -77,38 +81,6 @@ function updateHostsContent(original, newContent) {
   );
 }
 
-const originalWithout = `##
-# Host Database
-#
-# localhost is used to configure the loopback interface
-# when the system is booting.  Do not change this entry.
-##
-127.0.0.1	localhost
-255.255.255.255	broadcasthost
-::1             localhost
-
-
-`;
-const originalWith = `##
-# Host Database
-#
-# localhost is used to configure the loopback interface
-# when the system is booting.  Do not change this entry.
-##
-127.0.0.1	localhost
-255.255.255.255	broadcasthost
-::1             localhost
-
-# BEGIN Distraction Blocker
-127.0.0.1 www.youtube.com
-127.0.0.1 youtube.com
-127.0.0.1 www.instagram.com
-127.0.0.1 instagram.com
-# END Distraction Blocker`;
-
-const newSection = createBlockerSection(['youtube.com', 'x.com']);
-console.log(updateHostsContent(originalWith, newSection));
-
 // Read and write files
 async function readFile(file) {
   try {
@@ -123,7 +95,19 @@ async function writeFile(file, content) {
     await fs.writeFile(file, content, 'utf8');
   } catch (error) {
     console.error(`Error writing ${file}: `, error);
+    process.exit(1);
   }
+}
+
+// Write hosts safely
+async function safeWriteHosts(newContent) {
+  // save current to backup in case of failure
+  await fs.copyFile(hostsFilePath, backupFilePath);
+
+  const tmpFilePath = hostsFilePath + '.tmp';
+
+  await writeFile(tmpFilePath, newContent);
+  await fs.rename(tmpFilePath, hostsFilePath);
 }
 
 // User input validation
@@ -188,8 +172,23 @@ async function terminalInterface() {
         blockedSites.map((site) => '    ' + site + '\n').join(''),
     );
   }
-
-  // update hosts file
 }
 
-// terminalInterface();
+async function main() {
+  // Set blocked sites to current sites
+  const originalContent = await readFile(hostsFilePath);
+  const originalBlock = findBlockerSection(originalContent);
+  blockedSites = getUrlsFromSection(originalBlock);
+
+  // Run terminal interface
+  terminalInterface();
+
+  // Create new section to replace old section
+  const newSection = createBlockerSection(blockedSites);
+  const updated = updateHostsContent(originalContent, newSection);
+
+  // Update hosts file
+  await safeWriteHosts(updated);
+}
+
+main();
