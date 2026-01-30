@@ -24,7 +24,11 @@ function findBlockerSection(content) {
   const regex = new RegExp(`${beginMarker}([\\s\\S]*?)${endMarker}`);
   const match = content.match(regex);
 
-  return match ? match[0] : null;
+  if (!match) return null;
+
+  // Remove the markers
+  const lines = match[0].split('\n');
+  return lines.slice(1, -1).join('\n');
 }
 function getUrlsFromSection(content) {
   // Handle empty content
@@ -46,7 +50,7 @@ function getUrlsFromSection(content) {
 // Create a new blocker section
 function createBlockerSection(sites) {
   // This will prevent duplicate entries
-  let sitesInBlock = [...new Set(sites)];
+  let sitesInBlock = [];
 
   // Add the www. duplicates
   sites.forEach((site) => {
@@ -67,7 +71,10 @@ function updateHostsContent(original, newContent) {
 
   // if the section already exists
   if (regex.test(original)) {
-    return original.replace(regex, '\n' + newContent + '\n');
+    return original.replace(
+      regex,
+      beginMarker + '\n' + newContent + '\n' + endMarker,
+    );
   }
 
   return (
@@ -193,4 +200,4 @@ async function main() {
   await safeWriteHosts(updated);
 }
 
-// main();
+main();
