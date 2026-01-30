@@ -162,6 +162,13 @@ async function terminalInterface() {
       const data = prompt('\u001b[0m' + '  Write a URL to block: ');
       toAdd = normalizeUserInput(data);
 
+      if (data.includes('/')) {
+        prompt(
+          '\u001b[0;31m' +
+            "  Note: Specific paths can't be blocked, the entire domain will be blocked instead",
+        );
+      }
+
       isValidUserInput(toAdd)
         ? blockedSites.push(toAdd)
         : console.log('\n\u001b[2m' + 'Invalid Input');
