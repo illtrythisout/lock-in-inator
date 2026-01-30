@@ -134,10 +134,11 @@ function isValidUserInput(input) {
 async function terminalInterface() {
   const welcomeText =
     '\u001b[1;36m' +
-    'Site Blocker:' +
-    '\n\u001b[0m' +
-    '  Current Blocked Sites are:' +
-    '\n\u001b[2m' +
+    'Site Blocker:\n' +
+    '\u001b[0;36m' +
+    '  Current Blocked Sites are:\n' +
+    '\u001b[0m' +
+    '\u001b[2m' +
     blockedSites.map((site) => '    ' + site + '\n').join('');
   console.log(welcomeText);
 
@@ -145,10 +146,16 @@ async function terminalInterface() {
   let userIsDone = false;
   while (!userIsDone) {
     // ask if the user wants to add or remove a url
-    const addRemovePrompt = prompt(
-      '\u001b[0m' +
-        "  Press 'a' to add a site, 'r' to remove a site or 'q' to finish: ",
+    console.log(
+      '\u001b[0;36m' +
+        '  Available commands\n' +
+        '\u001b[0m' +
+        '\u001b[2m' +
+        '    (a) Add a site\n' +
+        '    (r) Remove a site\n' +
+        '    (f) to finish',
     );
+    const addRemovePrompt = prompt('\u001b[0m' + '  Type command: ');
 
     if (addRemovePrompt === 'a') {
       // push the inputted url
@@ -168,7 +175,7 @@ async function terminalInterface() {
       if (index > -1) blockedSites.splice(index, 1);
     }
 
-    if (addRemovePrompt === 'q') {
+    if (addRemovePrompt === 'f') {
       // exit loop
       userIsDone = true;
     }
