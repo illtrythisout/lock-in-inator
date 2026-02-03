@@ -9,6 +9,5 @@
 ::1             localhost
 
 # BEGIN Distraction Blocker
-127.0.0.1 instagram.com
-127.0.0.1 www.instagram.com
+
 # END Distraction Blocker

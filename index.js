@@ -17,6 +17,7 @@ const endMarker = '# END Distraction Blocker';
 const redirectTo = '127.0.0.1';
 
 let blockedSites = [];
+let isRestoring = false;
 
 // Find needed content
 function findBlockerSection(content) {
@@ -131,6 +132,62 @@ function isValidUserInput(input) {
   return /^[a-z0-9.-]+$/i.test(input);
 }
 
+// Putting it together
+async function setHostsFile(sitesToBlock) {
+  try {
+    // Read current hosts file
+    const originalContent = await readFile(hostsFilePath);
+
+    // Create new section to replace old section
+    const newSection = createBlockerSection(sitesToBlock);
+    const updated = updateHostsContent(originalContent, newSection);
+
+    // Update hosts file
+    await safeWriteHosts(updated);
+  } catch (error) {
+    console.error(`Error writing hosts: `, error);
+    process.exit(1);
+  }
+}
+
+// Break timer, default break is 10 mins
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+async function tempUnblockSites(blockedSites, duration = 10 * 60 * 1000) {
+  // Remove the site block
+  await setHostsFile([]);
+
+  // Handle time left
+  let minsRemaining = Math.floor(duration / (60 * 1000));
+  console.clear();
+  console.log(
+    '\u001b[0;36m' +
+      `Started break for ${minsRemaining} min ` +
+      '\u001b[0m' +
+      '\u001b[2m' +
+      '(Press Ctrl+C to end the break early)',
+  );
+
+  try {
+    while (minsRemaining > 0) {
+      console.log(`    Time left: ${minsRemaining} mins`);
+      await sleep(60 * 1000);
+      minsRemaining--;
+    }
+  } finally {
+    console.log(
+      '\u001b[0m' +
+        '\u001b[0;36m' +
+        'Your break is done, time to' +
+        '\u001b[1;36m' +
+        ' lock back in',
+    );
+    isRestoring = true;
+    await setHostsFile(blockedSites);
+  }
+}
+
 // Interface
 async function terminalInterface() {
   const welcomeText =
@@ -154,6 +211,7 @@ async function terminalInterface() {
         '\u001b[2m' +
         '    (a) Add a site\n' +
         '    (r) Remove a site\n' +
+        '    (b) Take a break\n' +
         '    (f) to finish',
     );
     const addRemovePrompt = prompt('\u001b[0m' + '  Type command: ');
@@ -161,7 +219,7 @@ async function terminalInterface() {
     if (addRemovePrompt === 'a') {
       // push the inputted url
       const data = prompt('\u001b[0m' + '  Write a URL to block: ');
-      toAdd = normalizeUserInput(data);
+      const toAdd = normalizeUserInput(data);
 
       if (data.includes('/')) {
         prompt(
@@ -181,6 +239,17 @@ async function terminalInterface() {
       const index = blockedSites.indexOf(toRemove);
       // if index exists
       if (index > -1) blockedSites.splice(index, 1);
+    }
+
+    if (addRemovePrompt == 'b') {
+      // Check for a valid input
+      let duration = parseInt(
+        prompt('\u001b[0m' + '  Duration of your break (default is 10min): '),
+      );
+      if (isNaN(duration) || duration <= 0) duration = 10;
+
+      // Run break
+      await tempUnblockSites(blockedSites, duration * 60 * 1000);
     }
 
     if (addRemovePrompt === 'f') {
@@ -204,15 +273,19 @@ async function main() {
   const originalBlock = findBlockerSection(originalContent);
   blockedSites = getUrlsFromSection(originalBlock);
 
+  // Make sure all sites are blocked on exit, can't have people cheating the system can we ;)
+  process.on('SIGINT', async () => {
+    if (isRestoring) process.exit(0);
+    isRestoring = true;
+    await setHostsFile(blockedSites);
+    process.exit(0);
+  });
+
   // Run terminal interface
   await terminalInterface();
 
-  // Create new section to replace old section
-  const newSection = createBlockerSection(blockedSites);
-  const updated = updateHostsContent(originalContent, newSection);
-
-  // Update hosts file
-  await safeWriteHosts(updated);
+  // Set Hosts
+  await setHostsFile(blockedSites);
 }
 
 main();
